@@ -35,7 +35,7 @@ def main():
             st.session_state.correct_answers = None
             st.session_state.accuracy = None
 
-        num_preguntas = st.sidebar.slider("Selecciona el número de preguntas", 1, len(df), 5)
+        num_preguntas = st.sidebar.slider("Selecciona el número de preguntas", 1, len(df), len(df))
 
         # Always generate a new set of random questions when "Iniciar Examen" button is clicked
         if st.sidebar.button("Iniciar Examen"):
@@ -48,7 +48,11 @@ def main():
 
             # Mostrar preguntas y recoger respuestas del usuario
             for index, row in st.session_state.exam_questions.iterrows():
-                st.write(f"**Pregunta:** {row['pregunta']}")
+                if len(row['pregunta'].split('#'))==2:
+                    st.write(f"**Pregunta:** {row['pregunta'].split('#')[0]}")
+                    st.image(f"{row['pregunta'].split('#')[1]}")
+                else:
+                    st.write(f"**Pregunta:** {row['pregunta']}")
                 options = [row['respuesta_A'], row['respuesta_B'], row['respuesta_C'], row['respuesta_D']]
                 selected_option = st.radio("Selecciona tu respuesta:", options, key=index)
                 st.session_state.user_responses[index] = selected_option
