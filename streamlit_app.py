@@ -1,6 +1,7 @@
-import streamlit as st
 import pandas as pd
+import streamlit as st
 from sklearn.metrics import accuracy_score
+
 
 def asignar_valor_fila(row):
     valores = {
@@ -11,13 +12,15 @@ def asignar_valor_fila(row):
     }
     return valores.get(row['respuesta_correcta'], None)
 
+
 def load_data(file):
-    df = pd.read_csv(file, header=None,
+    df = pd.read_csv(file, header=None, sep=';',
                      names=['pregunta', 'respuesta_A', 'respuesta_B', 'respuesta_C', 'respuesta_D',
                             'respuesta_correcta'])
 
     df['respuesta_correcta_valor'] = df.apply(asignar_valor_fila, axis=1)
     return df
+
 
 def main():
     st.title("Aplicación de Examen")
@@ -48,7 +51,7 @@ def main():
 
             # Mostrar preguntas y recoger respuestas del usuario
             for index, row in st.session_state.exam_questions.iterrows():
-                if len(row['pregunta'].split('#'))==2:
+                if len(row['pregunta'].split('#')) == 2:
                     st.write(f"**Pregunta:** {row['pregunta'].split('#')[0]}")
                     st.image(f"{row['pregunta'].split('#')[1]}")
                 else:
@@ -61,13 +64,16 @@ def main():
                 st.write("¡Examen completado!")
 
                 # Calcular resultados
-                user_answers = [st.session_state.user_responses[index] for index in st.session_state.exam_questions.index]
+                user_answers = [st.session_state.user_responses[index] for index in
+                                st.session_state.exam_questions.index]
                 st.session_state.accuracy = accuracy_score(st.session_state.correct_answers, user_answers)
 
                 # Change the color of accuracy based on the threshold
                 accuracy_color = "red" if st.session_state.accuracy < 0.5 else "green"
 
-                st.write(f"Porcentaje de aciertos: <span style='color:{accuracy_color}'>{st.session_state.accuracy * 100:.2f}%</span>", unsafe_allow_html=True)
+                st.write(
+                    f"Porcentaje de aciertos: <span style='color:{accuracy_color}'>{st.session_state.accuracy * 100:.2f}%</span>",
+                    unsafe_allow_html=True)
 
                 # Mostrar resultados de cada pregunta
                 results_df = pd.DataFrame({
@@ -85,6 +91,7 @@ def main():
                 st.session_state.user_responses = None
                 st.session_state.correct_answers = None
                 st.session_state.accuracy = None
+
 
 if __name__ == "__main__":
     main()
