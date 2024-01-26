@@ -61,8 +61,6 @@ def main():
                 st.session_state.user_responses[index] = selected_option
 
             if st.button("Submit"):
-                st.write("¡Examen completado!")
-
                 # Calcular resultados
                 user_answers = [st.session_state.user_responses[index] for index in
                                 st.session_state.exam_questions.index]
@@ -70,6 +68,7 @@ def main():
                         st.session_state.correct_answers):
                     st.write("¡NO has rellenado todas las respuestas!")
                 else:
+                    st.write("¡Examen completado!")
                     st.session_state.accuracy = accuracy_score(st.session_state.correct_answers, user_answers)
 
                     # Change the color of accuracy based on the threshold
