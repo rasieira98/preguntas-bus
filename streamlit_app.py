@@ -66,7 +66,8 @@ def main():
                 # Calcular resultados
                 user_answers = [st.session_state.user_responses[index] for index in
                                 st.session_state.exam_questions.index]
-                if len([answer for answer in user_answers if answer is not None]) != len(st.session_state.correct_answers):
+                if len([answer for answer in user_answers if answer is not None]) != len(
+                        st.session_state.correct_answers):
                     st.write("¡NO has rellenado todas las respuestas!")
                 else:
                     st.session_state.accuracy = accuracy_score(st.session_state.correct_answers, user_answers)
