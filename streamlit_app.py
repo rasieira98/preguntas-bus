@@ -57,7 +57,7 @@ def main():
                 else:
                     st.write(f"**Pregunta:** {row['pregunta']}")
                 options = [row['respuesta_A'], row['respuesta_B'], row['respuesta_C'], row['respuesta_D']]
-                selected_option = st.radio("Selecciona tu respuesta:", options, key=index)
+                selected_option = st.radio("Selecciona tu respuesta:", options, key=index, index=None)
                 st.session_state.user_responses[index] = selected_option
 
             if st.button("Submit"):
@@ -66,31 +66,34 @@ def main():
                 # Calcular resultados
                 user_answers = [st.session_state.user_responses[index] for index in
                                 st.session_state.exam_questions.index]
-                st.session_state.accuracy = accuracy_score(st.session_state.correct_answers, user_answers)
+                if len([answer for answer in user_answers if answer is not None]) != len(st.session_state.correct_answers):
+                    st.write("¡NO has rellenado todas las respuestas!")
+                else:
+                    st.session_state.accuracy = accuracy_score(st.session_state.correct_answers, user_answers)
 
-                # Change the color of accuracy based on the threshold
-                accuracy_color = "red" if st.session_state.accuracy < 0.5 else "green"
+                    # Change the color of accuracy based on the threshold
+                    accuracy_color = "red" if st.session_state.accuracy < 0.5 else "green"
 
-                st.write(
-                    f"Porcentaje de aciertos: <span style='color:{accuracy_color}'>{st.session_state.accuracy * 100:.2f}%</span>",
-                    unsafe_allow_html=True)
+                    st.write(
+                        f"Porcentaje de aciertos: <span style='color:{accuracy_color}'>{st.session_state.accuracy * 100:.2f}%</span>",
+                        unsafe_allow_html=True)
 
-                # Mostrar resultados de cada pregunta
-                results_df = pd.DataFrame({
-                    'Pregunta': st.session_state.exam_questions['pregunta'],
-                    'Respuesta Correcta': st.session_state.correct_answers,
-                    'Tu Respuesta': user_answers,
-                    'Correcto': [1 if c == u else 0 for c, u in zip(st.session_state.correct_answers, user_answers)]
-                })
+                    # Mostrar resultados de cada pregunta
+                    results_df = pd.DataFrame({
+                        'Pregunta': st.session_state.exam_questions['pregunta'],
+                        'Respuesta Correcta': st.session_state.correct_answers,
+                        'Tu Respuesta': user_answers,
+                        'Correcto': [1 if c == u else 0 for c, u in zip(st.session_state.correct_answers, user_answers)]
+                    })
 
-                # Set the width of the DataFrame
-                st.dataframe(results_df, width=800)
+                    # Set the width of the DataFrame
+                    st.dataframe(results_df, width=800)
 
-                # Limpiar el estado para permitir un nuevo examen
-                st.session_state.exam_questions = None
-                st.session_state.user_responses = None
-                st.session_state.correct_answers = None
-                st.session_state.accuracy = None
+                    # Limpiar el estado para permitir un nuevo examen
+                    st.session_state.exam_questions = None
+                    st.session_state.user_responses = None
+                    st.session_state.correct_answers = None
+                    st.session_state.accuracy = None
 
 
 if __name__ == "__main__":
