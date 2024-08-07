@@ -2,7 +2,6 @@ import pandas as pd
 import streamlit as st
 from sklearn.metrics import accuracy_score
 
-
 def asignar_valor_fila(row):
     valores = {
         'A': row['respuesta_A'],
@@ -12,7 +11,6 @@ def asignar_valor_fila(row):
     }
     return valores.get(row['respuesta_correcta'], None)
 
-
 def load_data(file):
     df = pd.read_csv(file, header=None, sep=';',
                      names=['pregunta', 'respuesta_A', 'respuesta_B', 'respuesta_C', 'respuesta_D',
@@ -21,79 +19,92 @@ def load_data(file):
     df['respuesta_correcta_valor'] = df.apply(asignar_valor_fila, axis=1)
     return df
 
-
 def main():
     st.title("Aplicación de Examen")
 
-    uploaded_file = st.file_uploader("Cargar archivo CSV", type=["csv"])
+    # Solicitud de contraseña
+    if 'authenticated' not in st.session_state:
+        st.session_state.authenticated = False
 
-    if uploaded_file is not None:
-        st.sidebar.info("CSV cargado correctamente.")
+    if not st.session_state.authenticated:
+        password = st.text_input("Introduce la contraseña para acceder:", type="password")
+        if st.button("Enviar"):
+            if password == st.secrets["PASSWORD"]:  # Cambia esto por tu contraseña deseada
+                st.session_state.authenticated = True
+                st.success("Acceso concedido")
+            else:
+                st.error("Contraseña incorrecta")
 
-        df = load_data(uploaded_file)
+    if st.session_state.authenticated:
+        uploaded_file = st.file_uploader("Cargar archivo CSV", type=["csv"])
 
-        if 'exam_questions' not in st.session_state:
-            st.session_state.exam_questions = None
-            st.session_state.user_responses = None
-            st.session_state.correct_answers = None
-            st.session_state.accuracy = None
+        if uploaded_file is not None:
+            st.sidebar.info("CSV cargado correctamente.")
 
-        num_preguntas = st.sidebar.slider("Selecciona el número de preguntas", 1, len(df), len(df))
+            df = load_data(uploaded_file)
 
-        # Always generate a new set of random questions when "Iniciar Examen" button is clicked
-        if st.sidebar.button("Iniciar Examen"):
-            st.session_state.exam_questions = df.sample(n=num_preguntas)  # Remove random_state for true randomness
-            st.session_state.user_responses = {}
-            st.session_state.correct_answers = st.session_state.exam_questions['respuesta_correcta_valor'].tolist()
+            if 'exam_questions' not in st.session_state:
+                st.session_state.exam_questions = None
+                st.session_state.user_responses = None
+                st.session_state.correct_answers = None
+                st.session_state.accuracy = None
 
-        if st.session_state.exam_questions is not None:
-            st.write(f"Comienza el examen con {num_preguntas} preguntas:")
+            num_preguntas = st.sidebar.slider("Selecciona el número de preguntas", 1, len(df), len(df))
 
-            # Mostrar preguntas y recoger respuestas del usuario
-            for index, row in st.session_state.exam_questions.iterrows():
-                if len(row['pregunta'].split('#')) == 2:
-                    st.write(f"**Pregunta:** {row['pregunta'].split('#')[0]}")
-                    st.image(f"{row['pregunta'].split('#')[1]}")
-                else:
-                    st.write(f"**Pregunta:** {row['pregunta']}")
-                options = [row['respuesta_A'], row['respuesta_B'], row['respuesta_C'], row['respuesta_D']]
-                selected_option = st.radio("Selecciona tu respuesta:", options, key=index, index=None)
-                st.session_state.user_responses[index] = selected_option
+            # Always generate a new set of random questions when "Iniciar Examen" button is clicked
+            if st.sidebar.button("Iniciar Examen"):
+                st.session_state.exam_questions = df.sample(n=num_preguntas)  # Remove random_state for true randomness
+                st.session_state.user_responses = {}
+                st.session_state.correct_answers = st.session_state.exam_questions['respuesta_correcta_valor'].tolist()
 
-            if st.button("Submit"):
-                # Calcular resultados
-                user_answers = [st.session_state.user_responses[index] for index in
-                                st.session_state.exam_questions.index]
-                if len([answer for answer in user_answers if answer is not None]) != len(
-                        st.session_state.correct_answers):
-                    st.write("¡NO has rellenado todas las respuestas!")
-                else:
-                    st.write("¡Examen completado!")
-                    st.session_state.accuracy = accuracy_score(st.session_state.correct_answers, user_answers)
+            if st.session_state.exam_questions is not None:
+                st.write(f"Comienza el examen con {num_preguntas} preguntas:")
 
-                    # Change the color of accuracy based on the threshold
-                    accuracy_color = "red" if st.session_state.accuracy < 0.5 else "green"
+                # Mostrar preguntas y recoger respuestas del usuario
+                for index, row in st.session_state.exam_questions.iterrows():
+                    if len(row['pregunta'].split('#')) == 2:
+                        st.write(f"**Pregunta:** {row['pregunta'].split('#')[0]}")
+                        st.image(f"{row['pregunta'].split('#')[1]}")
+                    else:
+                        st.write(f"**Pregunta:** {row['pregunta']}")
+                    options = [row['respuesta_A'], row['respuesta_B'], row['respuesta_C'], row['respuesta_D']]
+                    selected_option = st.radio("Selecciona tu respuesta:", options, key=index, index=None)
+                    st.session_state.user_responses[index] = selected_option
 
-                    st.write(
-                        f"Porcentaje de aciertos: <span style='color:{accuracy_color}'>{st.session_state.accuracy * 100:.2f}%</span>",
-                        unsafe_allow_html=True)
+                if st.button("Submit"):
+                    # Calcular resultados
+                    user_answers = [st.session_state.user_responses[index] for index in
+                                    st.session_state.exam_questions.index]
+                    if len([answer for answer in user_answers if answer is not None]) != len(
+                            st.session_state.correct_answers):
+                        st.write("¡NO has rellenado todas las respuestas!")
+                    else:
+                        st.write("¡Examen completado!")
+                        st.session_state.accuracy = accuracy_score(st.session_state.correct_answers, user_answers)
 
-                    # Mostrar resultados de cada pregunta
-                    results_df = pd.DataFrame({
-                        'Pregunta': st.session_state.exam_questions['pregunta'],
-                        'Respuesta Correcta': st.session_state.correct_answers,
-                        'Tu Respuesta': user_answers,
-                        'Correcto': [1 if c == u else 0 for c, u in zip(st.session_state.correct_answers, user_answers)]
-                    })
+                        # Change the color of accuracy based on the threshold
+                        accuracy_color = "red" if st.session_state.accuracy < 0.5 else "green"
 
-                    # Set the width of the DataFrame
-                    st.dataframe(results_df, width=800)
+                        st.write(
+                            f"Porcentaje de aciertos: <span style='color:{accuracy_color}'>{st.session_state.accuracy * 100:.2f}%</span>",
+                            unsafe_allow_html=True)
 
-                    # Limpiar el estado para permitir un nuevo examen
-                    st.session_state.exam_questions = None
-                    st.session_state.user_responses = None
-                    st.session_state.correct_answers = None
-                    st.session_state.accuracy = None
+                        # Mostrar resultados de cada pregunta
+                        results_df = pd.DataFrame({
+                            'Pregunta': st.session_state.exam_questions['pregunta'],
+                            'Respuesta Correcta': st.session_state.correct_answers,
+                            'Tu Respuesta': user_answers,
+                            'Correcto': [1 if c == u else 0 for c, u in zip(st.session_state.correct_answers, user_answers)]
+                        })
+
+                        # Set the width of the DataFrame
+                        st.dataframe(results_df, width=800)
+
+                        # Limpiar el estado para permitir un nuevo examen
+                        st.session_state.exam_questions = None
+                        st.session_state.user_responses = None
+                        st.session_state.correct_answers = None
+                        st.session_state.accuracy = None
 
 
 if __name__ == "__main__":
